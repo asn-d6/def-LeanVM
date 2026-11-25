@@ -1,0 +1,13 @@
+[book]
+title = "LeanVM security definitions"
+language = "en"
+src = "src"
+
+[build]
+build-dir = "book"
+
+[preprocessor.math]
+command = "python3 mdbook-math.py"
+
+[output.html]
+mathjax-support = true
