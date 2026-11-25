@@ -7,8 +7,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
@@ -18,11 +16,8 @@ env:
   MDBOOK_VERSION: v0.5.4
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
       - name: Install mdBook
@@ -36,5 +31,25 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: book
-      - id: deployment
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url || steps.retry.outputs.page_url }}
+    steps:
+      # A new artifact can be absent from the artifact list for some seconds
+      # (actions/deploy-pages#451). If the first try fails, wait and try again.
+      - id: deploy
+        uses: actions/deploy-pages@v5
+        continue-on-error: true
+      - name: Wait for the artifact
+        if: steps.deploy.outcome == 'failure'
+        run: sleep 45
+      - id: retry
+        if: steps.deploy.outcome == 'failure'
         uses: actions/deploy-pages@v5
